@@ -1,22 +1,539 @@
 <?php
-include_once('vendor/autoload.php');
 
-$ch = curl_init('https://core.telegram.org/bots/');
+/*
+ FOR ABSTARCT
+
+                ChatMember
+This object contains information about one member of a chat. Currently, the following 6 types of chat members are supported:
+                ChatMemberOwner
+                ChatMemberAdministrator
+                ChatMemberMember
+                ChatMemberRestricted
+                ChatMemberLeft
+                ChatMemberBanned
+
+                MessageOrigin
+This object describes the origin of a message. It can be one of
+        MessageOriginUser
+        MessageOriginHiddenUser
+        MessageOriginChat
+        MessageOriginChannel
+        MessageOriginUser
+
+                PaidMedia
+This object describes paid media. Currently, it can be one of
+            PaidMediaPreview
+            PaidMediaPhoto
+            PaidMediaVideo
+
+    BackgroundFill
+This object describes the way a background is filled based on the selected colors. Currently, it can be one of
+    BackgroundFillSolid
+    BackgroundFillGradient
+    BackgroundFillFreeformGradient
+
+    BackgroundType
+This object describes the type of a background. Currently, it can be one of
+    BackgroundTypeFill
+    BackgroundTypeWallpaper
+    BackgroundTypePattern
+    BackgroundTypeChatTheme
+
+        ReactionType
+This object describes the type of a reaction. Currently, it can be one of
+        ReactionTypeEmoji
+        ReactionTypeCustomEmoji
+        ReactionTypePaid
+
+            ChatBoostSource
+This object describes the source of a chat boost. It can be one of
+        ChatBoostSourcePremium
+        ChatBoostSourceGiftCode
+        ChatBoostSourceGiveaway
+
+
+        InputPaidMedia
+This object describes the paid media to be sent. Currently, it can be one of
+    InputPaidMediaPhoto
+    InputPaidMediaVideo
+
+            RevenueWithdrawalState
+This object describes the state of a revenue withdrawal operation. Currently, it can be one of
+    RevenueWithdrawalStatePending
+    RevenueWithdrawalStateSucceeded
+    RevenueWithdrawalStateFailed
+
+        TransactionPartner
+This object describes the source of a transaction, or its recipient for outgoing transactions. Currently, it can be one of
+        TransactionPartnerUser
+        TransactionPartnerFragment
+        TransactionPartnerTelegramAds
+        TransactionPartnerOther
+
+        PassportElementError
+This object represents an error in the Telegram Passport element which was submitted that should be resolved by the user. It should be one of:
+        PassportElementErrorDataField
+        PassportElementErrorFrontSide
+        PassportElementErrorReverseSide
+        PassportElementErrorSelfie
+        PassportElementErrorFile
+        PassportElementErrorFiles
+        PassportElementErrorTranslationFile
+        PassportElementErrorTranslationFiles
+        PassportElementErrorUnspecified
+
+        InlineQueryResult
+This object represents one result of an inline query. Telegram clients currently support results of the following 20 types:
+        InlineQueryResultCachedAudio
+        InlineQueryResultCachedDocument
+        InlineQueryResultCachedGif
+        InlineQueryResultCachedMpeg4Gif
+        InlineQueryResultCachedPhoto
+        InlineQueryResultCachedSticker
+        InlineQueryResultCachedVideo
+        InlineQueryResultCachedVoice
+        InlineQueryResultArticle
+        InlineQueryResultAudio
+        InlineQueryResultContact
+        InlineQueryResultGame
+        InlineQueryResultDocument
+        InlineQueryResultGif
+        InlineQueryResultLocation
+        InlineQueryResultMpeg4Gif
+        InlineQueryResultPhoto
+        InlineQueryResultVenue
+        InlineQueryResultVideo
+        InlineQueryResultVoice
+*/
+$AbstractObjects = [
+    'ChatMember',
+    'MessageOrigin',
+    'PaidMedia',
+    'BackgroundFill',
+    'BackgroundType',
+    'ReactionType',
+    'ChatBoostSource',
+    'InputPaidMedia',
+    'RevenueWithdrawalState',
+    'PassportElementError',
+];
+
+abstract class TgEntity{
+    protected array $NotForSave ;
+    public  string $ParserFolderName = 'Parser';
+    public  static ?string $EntityFolderName = null ;
+    public string $name;
+    public ?string $desc;
+    public array $params;
+
+
+    public function __construct(string $name, string|null $desc, array $params)
+    {
+        global $AbstractObjects;
+        $this->name = $name;
+        $this->desc = $desc;
+        $this->params = $params;
+        $this->NotForSave = array_merge( $AbstractObjects, ['Accent colors', 'Profile accent colors', 'Inline mode objects', 'Sending files']);
+    }
+
+    public function __Save():bool
+    {
+        if(in_array($this->name, $this->NotForSave)){
+            return false;
+        }
+
+        $folder = $this->ParserFolderName;
+        $namespace = $folder;
+        if(!file_exists($this->ParserFolderName)){
+            mkdir($this->ParserFolderName);
+        }
+        if(static::$EntityFolderName != null){
+            $folder .= DIRECTORY_SEPARATOR.static::$EntityFolderName;
+            $namespace .= '\\'.static::$EntityFolderName;
+            if(!file_exists($folder)){
+                mkdir($folder);
+            }
+        }
+
+        $filename = $folder.DIRECTORY_SEPARATOR.$this->name.'.php';
+
+
+
+        $data = '<?php'.PHP_EOL.PHP_EOL.'namespace '.$namespace.';'.PHP_EOL.PHP_EOL;
+        $data .= '/**'.PHP_EOL.'*    '.$this->desc.PHP_EOL.'*/'.PHP_EOL;
+        $data .= 'readonly class '.$this->name.'{'.PHP_EOL;
+
+        $data4constructor = 'public function __construct(array $input) {'.PHP_EOL;
+
+        foreach ($this->params AS $param){
+
+            $data4constructor .='            $this->'.$param->Field.' = ';
+            if($param->IsOptional){
+                $data4constructor .=' array_key_exists("'.$param->Field.'", $input ) ? ';
+                $type ='?';
+            }
+            else{
+                $type ='';
+            }
+
+
+            if($param->Type == 'Integer'){
+                $type .='int';
+                $data4constructor .='(int)$input["'.$param->Field.'"]';
+            }
+            elseif($param->Type == 'Integer or String'){
+                $type .='int';
+                $data4constructor .='(int)$input["'.$param->Field.'"]';
+            }
+            elseif($param->Type == 'Boolean'){
+                $type .='bool';
+                $data4constructor .='(bool)$input["'.$param->Field.'"]';
+            }
+            elseif($param->Type == 'String'){
+                $type .='string';
+                $data4constructor .='(string)$input["'.$param->Field.'"]';
+            }
+            elseif($param->Type == 'Float'){
+                $type .='float';
+                $data4constructor .='(float)$input["'.$param->Field.'"]';
+            }
+            elseif($param->Type == 'True'){
+                $type .='true';
+                $data4constructor .='(bool)$input["'.$param->Field.'"]';
+            }
+            elseif(str_starts_with($param->Type, 'Array')){
+                $type .='array';
+                $data4constructor .=' $input["'.$param->Field.'"]';
+            }
+            elseif(in_array($param->Type, static::GetAllTgTypes())){
+                $type .=$param->Type;
+                $data4constructor .=' new \\'.$namespace.'\\'.$param->Type.'($input["'.$param->Field.'"])';
+            }
+            elseif($param->Type == 'InputFile or String'){
+                $type .='string';
+                $data4constructor .='(string)$input["'.$param->Field.'"]';
+            }
+            else{
+                Throw new Exception('Упс! Неизвестный тип: '.$param->Type.', параметра: '.$param->Field.', в классе: '.$this->name);
+            }
+
+            /**
+             * @var $param TgParamEntity
+             */
+            $data .= '/**'.PHP_EOL.'* @var $'.$param->Field.' '.$type;
+            $data .=' ('.$param->Type.') '.$param->Description.PHP_EOL.'*/'.PHP_EOL;
+            $data .= 'public '.$type;
+            $data .=' $'.$param->Field.';'.PHP_EOL;
+            if($param->IsOptional){
+                $data4constructor .=' : NULL';
+            }
+            $data4constructor .= ';'.PHP_EOL;
+        }
+        $data .= PHP_EOL.PHP_EOL;
+        $data .=$data4constructor.PHP_EOL.'}';
+        $data .= PHP_EOL.'}'.PHP_EOL;
+
+        return file_put_contents($filename, $data);
+    }
+}
+
+/**
+ *
+ */
+class TgType extends TgEntity
+{
+    /**
+     * @var string|null
+     */
+    public static ?string $EntityFolderName = 'Types' ;
+    /**
+     * @var array
+     */
+    public static Array $AllTgTypes = [];
+    public static function GetAllTgTypes():array
+    {
+        return self::$AllTgTypes;
+    }
+
+    public static function parseHtml($html):static|null
+    {
+        $html = str_replace(array("\r", "\n"), '', $html);
+        try {
+            preg_match_all( '~</a>[\w\s]+</h4>~', $html, $matches );
+            if(!isset($matches[0][0])){
+                Throw new Exception('Не найден name of Class');
+            }
+            $name  = strip_tags($matches[0][0]);
+
+            preg_match_all( '~<p>.+</p>~', $html, $matches );
+            if(isset($matches[0][0])){
+                $desc  = strip_tags($matches[0][0]);
+            }
+            else{
+                $desc  = null;
+            }
+
+            self::$AllTgTypes[] = $name;
+            return new static(  name: $name,
+                                desc: $desc,
+                                params: TgParamEntity::parseHtml($html)
+                        );
+        }
+        catch (Throwable $e){
+            return null;
+        }
+    }
+}
+class TgParamEntity{
+    public string $Field;
+    public string $Type;
+    public bool $IsOptional;
+    public string $Description;
+
+
+    public static Array $AllTypes = [];
+
+    /**
+     * @param string $Field
+     * @param string $Type
+     * @param bool $IsOptional
+     * @param string $Description
+     */
+    public function __construct(string $Field, string $Type, bool $IsOptional, string $Description)
+    {
+
+        $this->Field = $Field;
+        $this->Type = $Type;
+        $this->IsOptional = $IsOptional;
+        $this->Description = $Description;
+
+        static::$AllTypes[] = $Type;
+
+    }
+    public static function GetAllTypes():array
+    {
+        return array_unique(static::$AllTypes);
+    }
+
+    public static function parseHtml($htmlWithTable):array{
+        $Array = [];
+        preg_match_all( '~<tbody>[\w|\W]+</tbody>~', $htmlWithTable, $matches );
+        if(isset($matches[0][0])){
+            $tbody  = $matches[0][0];
+            $explodedTr = explode('<tr>', $matches[0][0]);
+            foreach ($explodedTr AS $tr){
+                $exploadedtd = explode('<td>', $tr);
+                if(count($exploadedtd) > 3){
+                    $Field = strip_tags($exploadedtd[1]);
+                    $Type = strip_tags($exploadedtd[2]);
+                    $Description = strip_tags($exploadedtd[3]);
+                    if(str_contains($Description, 'Optional')){
+                        $IsOptional = true;
+                    }
+                    else{
+                        $IsOptional = false;
+                    }
+
+                    $Array[] = new static( $Field, $Type, $IsOptional, $Description);
+                }
+
+            }
+
+        }
+        return $Array;
+    }
+}
+
+$ch = curl_init('https://core.telegram.org/bots/api');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_HEADER, false);
 $html = curl_exec($ch);
 curl_close($ch);
 
+$Types = [];
+$h3exploded = explode('<h3>', $html);
+foreach ($h3exploded as $item => $h3){
+    preg_match_all( '~</a>[\w\s]+</h3>~', $h3, $h3item );
+    if(isset($h3item[0][0])){
+        $H3[strip_tags($h3item[0][0])] = $h3;
+    }
 
-$document = new DiDom\Document($html);
-////*[@id="dev_page_content_wrap"]/div[1]/div/ul/li[6]/ul
-///
-$dev_side_nav = $document->find('ul.nav');
+}
+
+foreach ($H3 AS $key => $value){
+    /*
+    Recent changes
+    Authorizing your bot
+    Making requests
+    Using a Local Bot API Server
+    * Getting updates
+    * Available types
+    Available methods
+    Updating messages
+    * Stickers
+    *Inline mode
+    * Payments
+    * Telegram Passport
+    * Games
+    */
+    if($key == 'Available types'){
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            if($newType = TgType::parseHtml($h4)){
+                $Types[] = $newType;
+            }
+        }
+    }
+    elseif($key == 'Stickers'){
+        $TypesOfStickers = [ 'Sticker', 'StickerSet', 'MaskPosition', 'InputSticker', ];
+        $MethodOfStickers = [ 'sendSticker', 'getStickerSet', 'getCustomEmojiStickers', 'uploadStickerFile', 'createNewStickerSet', 'addStickerToSet', 'setStickerPositionInSet', 'deleteStickerFromSet', 'replaceStickerInSet', 'setStickerEmojiList', 'setStickerKeywords', 'setStickerMaskPosition', 'setStickerSetTitle', 'setStickerSetThumbnail', 'setCustomEmojiStickerSetThumbnail', 'deleteStickerSet', ];
+
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            $r = $h4;
+            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfStickers)){
+                $Types[] = $newType;
+            }
+        }
+    }
+    elseif($key == 'Payments'){
+        $TypesOfPayments = [
+            'LabeledPrice',
+            'Invoice',
+            'ShippingAddress',
+            'OrderInfo',
+            'ShippingOption',
+            'SuccessfulPayment',
+            'RefundedPayment',
+            'ShippingQuery',
+            'PreCheckoutQuery',
+            'PaidMediaPurchased',
+            'RevenueWithdrawalStatePending',
+            'RevenueWithdrawalStateSucceeded',
+            'RevenueWithdrawalStateFailed',
+            'TransactionPartnerUser',
+            'TransactionPartnerFragment',
+            'TransactionPartnerTelegramAds',
+            'TransactionPartnerOther',
+            'StarTransaction',
+            'StarTransactions',
+        ];
+        $MethodOfPayments = [
+            'sendInvoice',
+            'createInvoiceLink',
+            'answerShippingQuery',
+            'answerPreCheckoutQuery',
+            'getStarTransactions',
+            'refundStarPayment',
+            ];
+
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            $r = $h4;
+            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfPayments)){
+                $Types[] = $newType;
+            }
+        }
+    }
+    elseif($key == 'Games'){
+        $TypesOfGames = ['Game', 'CallbackGame', 'GameHighScore',  ];
+        $MethodOfGames = [ 'setGameScore', 'getGameHighScores', ];
+
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            $r = $h4;
+            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfGames)){
+                $Types[] = $newType;
+            }
+        }
+    }
+    elseif($key == 'Inline mode'){
+
+        $MethodOfInline = [
+            'answerInlineQuery',
+            'answerWebAppQuery',
+            ];
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            $r = $h4;
+            //Тут от обратного. Много обьектов и только 2 метода
+            if($newType = TgType::parseHtml($h4) AND !in_array($newType->name, $MethodOfInline)){
+                $Types[] = $newType;
+            }
+        }
+    }
+    elseif($key == 'Getting updates'){
+        $TypesOfUpdates = [
+            'Update',
+            'WebhookInfo',
+        ];
+        $MethodOfUpdates = [
+            'getUpdates',
+            'setWebhook',
+            'deleteWebhook',
+            'getWebhookInfo',
+        ];
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            $r = $h4;
+            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfUpdates)){
+                $Types[] = $newType;
+            }
+        }
+    }
+    elseif ($key == 'Telegram Passport'){//Telegram Passport
+        $TypesOfPassport = [
+            'PassportData',
+            'PassportFile',
+            'EncryptedPassportElement',
+            'EncryptedCredentials',
+            'PassportElementErrorDataField',
+            'PassportElementErrorFrontSide',
+            'PassportElementErrorReverseSide',
+            'PassportElementErrorSelfie',
+            'PassportElementErrorFile',
+            'PassportElementErrorFiles',
+            'PassportElementErrorTranslationFile',
+            'PassportElementErrorTranslationFiles',
+            'PassportElementErrorUnspecified',
+            ];
+        $MethodOfPassport = [
+            'setPassportDataErrors',
+            ];
+
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            $r = $h4;
+            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfPassport)){
+                $Types[] = $newType;
+            }
+        }
+    }
 
 
-$r= 1;
-//$saw = \nokogiri::fromHtml($html);
+}
 
-///html/body/div/div[2]/div/div/div[1]/div/ul/li[6]/ul/li[1]
-//$side_nav = $document->find('dev_side_nav > ul');
+//if(isset($H3['Available types'])){
+//    $for_expload = $H3['Available types'];
+//    $h4exploaded =  explode('<h4>', $for_expload);
+//    foreach ($h4exploaded as $h4){
+//        if($newType = TgType::parseHtml($h4)){
+//            $Types[] = $newType;
+//        }
+//
+//    }
+//}
+
+
+//
+foreach($Types AS $Type){
+    if($Type instanceof TgEntity){
+        $Type->__Save();
+    }
+}
+
+$AllEntityTypes = TgParamEntity::GetAllTypes();
+$AllTgTypes = TgType::GetAllTgTypes();
+
+
