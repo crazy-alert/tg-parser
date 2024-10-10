@@ -164,7 +164,7 @@ function convertToCamelCase(string $string):string {
 }
 abstract class BotApiEntity{
     protected array $NotForSave ;
-    static string $ParserFolderName = 'Parser';
+    static string $ParserFolderName = 'TelegramApi';
     public  static ?string $EntityFolderName = null ;
     public string $name;
     public ?string $desc;
@@ -180,12 +180,57 @@ abstract class BotApiEntity{
         $this->NotForSave = array_merge( $AbstractObjects, ['Accent colors', 'Profile accent colors', 'Inline mode objects', 'Sending files']);
     }
 
-    public function __Save():bool
+    abstract public function __Save():bool;
+
+}
+class BotApiType extends BotApiEntity
+{
+    /**
+     * @var string|null
+     */
+    public static ?string $EntityFolderName = 'Types' ;
+    /**
+     * @var array
+     */
+    public static Array $AllTgTypes = [];
+    public static function GetAllTgTypes():array
     {
+        return self::$AllTgTypes;
+    }
+
+    public static function parseHtml($html):static|null
+    {
+        $html = str_replace(array("\r", "\n"), '', $html);
+        try {
+            preg_match_all( '~</a>[\w\s]+</h4>~', $html, $matches );
+            if(!isset($matches[0][0])){
+                Throw new Exception('Не найден name of Class');
+            }
+            $name  = strip_tags($matches[0][0]);
+
+            preg_match_all( '~<p>.+</p>~', $html, $matches );
+            if(isset($matches[0][0])){
+                $desc  = strip_tags($matches[0][0]);
+            }
+            else{
+                $desc  = null;
+            }
+
+            self::$AllTgTypes[] = $name;
+            return new static(  name: $name,
+                                desc: $desc,
+                                params: ParamForBotApiType::parseHtml($html)
+                        );
+        }
+        catch (Throwable $e){
+            return null;
+        }
+    }
+    public function __Save():bool {
         if(in_array($this->name, $this->NotForSave)){
             return false;
         }
-
+//
         $folder = self::$ParserFolderName;
         $namespace = $folder;
         if(!file_exists(static::$ParserFolderName)){
@@ -280,50 +325,6 @@ abstract class BotApiEntity{
         return file_put_contents($filename, $data);
     }
 }
-class BotApiType extends BotApiEntity
-{
-    /**
-     * @var string|null
-     */
-    public static ?string $EntityFolderName = 'Types' ;
-    /**
-     * @var array
-     */
-    public static Array $AllTgTypes = [];
-    public static function GetAllTgTypes():array
-    {
-        return self::$AllTgTypes;
-    }
-
-    public static function parseHtml($html):static|null
-    {
-        $html = str_replace(array("\r", "\n"), '', $html);
-        try {
-            preg_match_all( '~</a>[\w\s]+</h4>~', $html, $matches );
-            if(!isset($matches[0][0])){
-                Throw new Exception('Не найден name of Class');
-            }
-            $name  = strip_tags($matches[0][0]);
-
-            preg_match_all( '~<p>.+</p>~', $html, $matches );
-            if(isset($matches[0][0])){
-                $desc  = strip_tags($matches[0][0]);
-            }
-            else{
-                $desc  = null;
-            }
-
-            self::$AllTgTypes[] = $name;
-            return new static(  name: $name,
-                                desc: $desc,
-                                params: ParamForBotApiType::parseHtml($html)
-                        );
-        }
-        catch (Throwable $e){
-            return null;
-        }
-    }
-}
 class ParamForBotApiType{
     public string $Field;
     public string $Type;
@@ -383,8 +384,230 @@ class ParamForBotApiType{
         return $Array;
     }
 }
+class MethodForBotApi extends BotApiEntity {
+    public function __construct(string $name, string|null $desc, array $params)
+    {
+        global $AbstractObjects;
+        $this->name = $name;
+        $this->desc = $desc;
+        $this->params = $params;
+        $this->NotForSave = array_merge( $AbstractObjects,  ['Formatting options', 'Inline mode methods']);
+    }
 
 
+    public static array $AllTgMethods = [];
+    public static ?string $EntityFolderName = 'Methods' ;
+    public static function GetAllTgMethods():array
+    {
+        return self::$AllTgMethods;
+    }
+    public static function parseHtml($html):static|null
+    {
+        $html = str_replace(array("\r", "\n"), '', $html);
+        try {
+            preg_match_all( '~</a>[\w\s]+</h4>~', $html, $matches );
+            if(!isset($matches[0][0])){
+                Throw new Exception('Не найден name of Class');
+            }
+            $name  = strip_tags($matches[0][0]);
+
+            preg_match_all( '~<p>.+</p>~', $html, $matches );
+            if(isset($matches[0][0])){
+                $desc  = strip_tags($matches[0][0]);
+            }
+            else{
+                $desc  = null;
+            }
+
+
+
+            $params = [];
+            preg_match_all('/<table.*?>(.*?)<\/table>/is', $html, $tableMatches);
+            if(isset($tableMatches[1][0])){
+                $table = $tableMatches[1][0];
+                preg_match_all('/<tbody.*?>(.*?)<\/tbody>/is', $table, $tbodyMatches);
+                if(isset($tbodyMatches[1][0])){
+                    $tbody = $tbodyMatches[1][0];
+                    preg_match_all('/<tr.*?>(.*?)<\/tr>/is', $tbody, $trMatches);
+                    if(isset($trMatches[1]) AND is_array($trMatches[1])) {
+                        foreach ($trMatches[1] as $tr) {
+                            preg_match_all('/<td.*?>(.*?)<\/td>/is', $tr, $tdMatches);
+                            if(isset($tdMatches[1])){
+                                $params[] = new ParamForBotApiMethods(  Parameter: $tdMatches[1][0],
+                                                                        Type:strip_tags($tdMatches[1][1]) ,
+                                                                        Required:$tdMatches[1][2],
+                                                                        Description:$tdMatches[1][3]
+                                                );
+
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            self::$AllTgMethods[] = $name;
+            return new static(  name: $name,
+                desc: $desc,
+                params: $params
+            );
+        }
+        catch (Throwable $e){
+            return null;
+        }
+    }
+    public function __Save(): bool{
+
+        if(in_array($this->name, $this->NotForSave)){
+            return false;
+        }
+
+        $folder = self::$ParserFolderName;
+        $namespace = $folder;
+        $DOCBlockForClass = $this->desc;
+        $dataImport = '';
+        if(!file_exists(static::$ParserFolderName)){
+            mkdir(self::$ParserFolderName);
+        }
+        if(static::$EntityFolderName != null){
+            $folder .= DIRECTORY_SEPARATOR.static::$EntityFolderName;
+            $namespace .= '\\'.static::$EntityFolderName;
+            if(!file_exists($folder)){
+                mkdir($folder);
+            }
+        }
+
+        $filename = $folder.DIRECTORY_SEPARATOR.$this->name.'.php';
+
+
+        $docBlockForConstruct = '        /**'.PHP_EOL;
+
+        $data4constructor = '      public function __construct( '.PHP_EOL;
+        if(count($this->params)>0){
+                foreach ($this->params AS $param ){
+
+                    if($param->Type == 'String'){
+                        $typeStr = 'string';
+                    }
+                    elseif ($param->Type == 'Boolean'){
+                        $typeStr = 'bool';
+                    }
+                    elseif ($param->Type == 'Integer'){
+                        $typeStr = 'int';
+                    }
+                    elseif ($param->Type == 'Integer or String'){
+                        $typeStr = 'int';
+                    }
+                    elseif ($param->Type == 'Float'){
+                        $typeStr = 'float|int';
+                    }
+                    elseif (str_starts_with($param->Type, 'Array of')){
+                        $typeStr = 'array';
+                    }
+                    elseif (in_array($param->Type, BotApiType::GetAllTgTypes())){
+                        $typeStr = $param->Type;
+                        $dataImport .= 'use \\'.BotApiType::$ParserFolderName.'\\'.BotApiType::$EntityFolderName.'\\'.$typeStr.';'.PHP_EOL;
+
+
+                    }
+                    elseif ($param->Type == 'InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardRemove or ForceReply'){
+                        $newType = 'InlineKeyboardMarkup';
+                        $dataImport .= 'use \\'.BotApiType::$ParserFolderName.'\\'.BotApiType::$EntityFolderName.'\\'.$newType.';'.PHP_EOL;
+                        $typeStr =  $newType;
+                        $typeStr .= '|';
+
+                        $newType = 'ReplyKeyboardMarkup';
+                        $dataImport .= 'use \\'.BotApiType::$ParserFolderName.'\\'.BotApiType::$EntityFolderName.'\\'.$newType.';'.PHP_EOL;
+                        $typeStr .=  $newType;
+                        $typeStr .= '|';
+
+                        $newType = 'ReplyKeyboardRemove';
+                        $dataImport .= 'use \\'.BotApiType::$ParserFolderName.'\\'.BotApiType::$EntityFolderName.'\\'.$newType.';'.PHP_EOL;
+                        $typeStr .=  $newType;
+                        $typeStr .= '|';
+
+                        $newType = 'ForceReply';
+                        $dataImport .= 'use \\'.BotApiType::$ParserFolderName.'\\'.BotApiType::$EntityFolderName.'\\'.$newType.';'.PHP_EOL;
+                        $typeStr .=  $newType;
+
+
+
+                    }
+                    elseif (str_ends_with($param->Type, ' or String')){
+                        $typeStr = 'string';
+                    }
+                    else{
+                       Throw new Exception('Такого мы ждали. Очень неожиданно');
+                    }
+
+
+                    $data4constructor .= '         '.$typeStr.' $'.$param->Parameter;
+
+                    if($param->Required == 'Optional'){
+                        $data4constructor .=' = NULL';
+                        $AddQuot = '?';
+                    }
+                    else{
+                        $AddQuot = '';
+                    }
+                    $docBlockForConstruct .= '        * @param $'.$param->Parameter.' '.$AddQuot.$typeStr.' '.$param->Required.' '.$param->Description.PHP_EOL;
+                    $data4constructor .= ','.PHP_EOL;
+
+                }
+            $docBlockForConstruct .= '        */'.PHP_EOL;
+
+        }
+        $data4constructor .= '         ) {'.PHP_EOL;
+        if(count($this->params)>0){
+            foreach ($this->params AS $param ){
+                $data4constructor .= '                  $this->parameters[\''.$param->Parameter.'\'] = ';
+                $data4constructor .= '$'.$param->Parameter.' ;'.PHP_EOL;
+            }
+
+
+        }
+        else{
+            $data4constructor .= '                  $this->parameters = [];'.PHP_EOL;
+        }
+        
+        
+        $data4constructor .= '      }'.PHP_EOL;
+
+
+        $data = '<?php'.PHP_EOL.PHP_EOL.'namespace '.$namespace.';'.PHP_EOL.PHP_EOL;
+        $data .= $dataImport;
+        $data .= '/**'.PHP_EOL;
+        $data .= '* '. $DOCBlockForClass.PHP_EOL;
+        $data .= '*/'.PHP_EOL;
+        $data .= 'readonly class '.$this->name.'{'.PHP_EOL;
+        $data .= '      public array $parameters;'.PHP_EOL;
+
+
+        if(count($this->params)>0){
+            $data .= $docBlockForConstruct;
+        }
+
+        $data .= $data4constructor ;
+        $data .= '}';
+
+        return file_put_contents($filename, $data);
+    }
+}
+class ParamForBotApiMethods {
+    public string $Parameter;
+    public string $Type;
+    public string $Required;
+    public string $Description;
+    public function __construct($Parameter, $Type, $Required, $Description)
+    {
+        $this->Parameter = $Parameter;
+        $this->Type = $Type;
+        $this->Required = $Required;
+        $this->Description = $Description;
+    }
+
+    public static Array $AllTypes = [];
+}
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -393,6 +616,7 @@ $html = curl_exec($ch);
 curl_close($ch);
 
 $Types = [];
+$Methods = [];
 $h3exploded = explode('<h3>', $html);
 foreach ($h3exploded as $item => $h3){
     preg_match_all( '~</a>[\w\s]+</h3>~', $h3, $h3item );
@@ -406,10 +630,21 @@ foreach ($H3 AS $key => $value){
 
     if($key == 'Recent changes' OR $key == 'Authorizing your bot' OR $key == 'Making requests' OR $key == 'Using a Local Bot API Server'){
         $data = HTMLl2MD('<h3>'.$value, $url);
+        if(!file_exists(BotApiEntity::$ParserFolderName)){
+            mkdir(BotApiEntity::$ParserFolderName);
+        }
         $file = BotApiEntity::$ParserFolderName.DIRECTORY_SEPARATOR.convertToCamelCase($key).'.md';
         file_put_contents($file, $data);
     }
     elseif ($key == 'Available methods' OR $key == 'Updating messages'){
+        $h4exploaded =  explode('<h4>', $value);
+        foreach ($h4exploaded as $h4){
+            if($newMethod = MethodForBotApi::parseHtml($h4)){
+                $Methods[] = $newMethod;
+            }
+        }
+
+
         echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
     elseif($key == 'Available types'){
@@ -571,6 +806,11 @@ foreach ($H3 AS $key => $value){
 foreach($Types AS $Type){
     if($Type instanceof BotApiEntity){
         $Type->__Save();
+    }
+}
+foreach($Methods AS $Method){
+    if($Method instanceof MethodForBotApi){
+        $Method->__Save();
     }
 }
 
