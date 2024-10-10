@@ -1,4 +1,5 @@
 <?php
+$url = 'https://core.telegram.org/bots/api';
 
 /*
  FOR ABSTARCT
@@ -117,10 +118,53 @@ $AbstractObjects = [
     'RevenueWithdrawalState',
     'PassportElementError',
 ];
+function HTMLl2MD(string $html, string $urlFoAbsolute):string{
 
+    $data = preg_replace('/<h3><a[^>]*>(.*?)<\/a>(.*?)<\/h3>/', '# $2','<h3>'.$html);
+    $data = preg_replace('/<h4>(.*?)<\/h4>/', '## $1',$data);
+    $data = preg_replace('/<strong>(.*?)<\/strong>/', '__$1__',$data);
+    $data = preg_replace('/<li>(.*?)<\/li>/', '* $1',$data);
+
+    //делаем все ссылки абсолютными
+    $baseUrl = rtrim($urlFoAbsolute, '/') . '/';
+    $data = preg_replace_callback(
+        pattern:    '/(href|src)=[\'"]?(?!https?:\/\/)(?!data:)([^\'" >]+)[\'"]?/i',
+        callback:   function ($matches) use ($baseUrl) {
+            // Составляем абсолютный URL
+            $absoluteUrl = $baseUrl . ltrim($matches[2], '/');
+            return $matches[1] . '="' . $absoluteUrl . '"';
+        },
+        subject:    $data
+    );
+    $data = str_replace('/bots/api/bots/', '/bots/', $data);
+    // делаем все ссылки markdown
+    $data = preg_replace_callback(
+        '/<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/',
+        function ($matches) {
+            // $matches[1] — это URL ссылки, $matches[2] — текст ссылки
+            return '[' . trim($matches[2]) . '](' . trim($matches[1]) . ')';
+        },
+        $data
+    );
+
+    return strip_tags($data);
+}
+function convertToCamelCase(string $string):string {
+    // Удаляем лишние пробелы
+    $string = trim($string);
+
+    // Разбиваем строку на слова
+    $words = explode(' ', $string);
+
+    // Преобразуем каждое слово к формату UpperCamelCase
+    $words = array_map('ucfirst', $words);
+
+    // Объединяем слова в одну строку
+    return implode('', $words);
+}
 abstract class TgEntity{
     protected array $NotForSave ;
-    public  string $ParserFolderName = 'Parser';
+    static string $ParserFolderName = 'Parser';
     public  static ?string $EntityFolderName = null ;
     public string $name;
     public ?string $desc;
@@ -142,10 +186,10 @@ abstract class TgEntity{
             return false;
         }
 
-        $folder = $this->ParserFolderName;
+        $folder = self::$ParserFolderName;
         $namespace = $folder;
-        if(!file_exists($this->ParserFolderName)){
-            mkdir($this->ParserFolderName);
+        if(!file_exists(static::$ParserFolderName)){
+            mkdir(self::$ParserFolderName);
         }
         if(static::$EntityFolderName != null){
             $folder .= DIRECTORY_SEPARATOR.static::$EntityFolderName;
@@ -344,7 +388,8 @@ class TgParamEntity{
     }
 }
 
-$ch = curl_init('https://core.telegram.org/bots/api');
+
+$ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_HEADER, false);
@@ -362,22 +407,16 @@ foreach ($h3exploded as $item => $h3){
 }
 
 foreach ($H3 AS $key => $value){
-    /*
-    Recent changes
-    Authorizing your bot
-    Making requests
-    Using a Local Bot API Server
-    * Getting updates
-    * Available types
-    Available methods
-    Updating messages
-    * Stickers
-    *Inline mode
-    * Payments
-    * Telegram Passport
-    * Games
-    */
-    if($key == 'Available types'){
+
+    if($key == 'Recent changes' OR $key == 'Authorizing your bot' OR $key == 'Making requests' OR $key == 'Using a Local Bot API Server'){
+        $data = HTMLl2MD('<h3>'.$value, $url);
+        $file = TgEntity::$ParserFolderName.DIRECTORY_SEPARATOR.convertToCamelCase($key).'.md';
+        file_put_contents($file, $data);
+    }
+    elseif ($key == 'Available methods' OR $key == 'Updating messages'){
+        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
+    }
+    elseif($key == 'Available types'){
         $h4exploaded =  explode('<h4>', $value);
         foreach ($h4exploaded as $h4){
             if($newType = TgType::parseHtml($h4)){
@@ -396,6 +435,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
+        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
     elseif($key == 'Payments'){
         $TypesOfPayments = [
@@ -435,6 +475,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
+        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
     elseif($key == 'Games'){
         $TypesOfGames = ['Game', 'CallbackGame', 'GameHighScore',  ];
@@ -447,6 +488,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
+        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
     elseif($key == 'Inline mode'){
 
@@ -462,6 +504,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
+        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
     elseif($key == 'Getting updates'){
         $TypesOfUpdates = [
@@ -481,6 +524,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
+        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
     elseif ($key == 'Telegram Passport'){//Telegram Passport
         $TypesOfPassport = [
@@ -509,6 +553,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
+        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
 
 
