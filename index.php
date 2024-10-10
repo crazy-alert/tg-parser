@@ -162,7 +162,7 @@ function convertToCamelCase(string $string):string {
     // Объединяем слова в одну строку
     return implode('', $words);
 }
-abstract class TgEntity{
+abstract class BotApiEntity{
     protected array $NotForSave ;
     static string $ParserFolderName = 'Parser';
     public  static ?string $EntityFolderName = null ;
@@ -262,7 +262,7 @@ abstract class TgEntity{
             }
 
             /**
-             * @var $param TgParamEntity
+             * @var $param ParamForBotApiType
              */
             $data .= '/**'.PHP_EOL.'* @var $'.$param->Field.' '.$type;
             $data .=' ('.$param->Type.') '.$param->Description.PHP_EOL.'*/'.PHP_EOL;
@@ -280,11 +280,7 @@ abstract class TgEntity{
         return file_put_contents($filename, $data);
     }
 }
-
-/**
- *
- */
-class TgType extends TgEntity
+class BotApiType extends BotApiEntity
 {
     /**
      * @var string|null
@@ -320,7 +316,7 @@ class TgType extends TgEntity
             self::$AllTgTypes[] = $name;
             return new static(  name: $name,
                                 desc: $desc,
-                                params: TgParamEntity::parseHtml($html)
+                                params: ParamForBotApiType::parseHtml($html)
                         );
         }
         catch (Throwable $e){
@@ -328,7 +324,7 @@ class TgType extends TgEntity
         }
     }
 }
-class TgParamEntity{
+class ParamForBotApiType{
     public string $Field;
     public string $Type;
     public bool $IsOptional;
@@ -410,7 +406,7 @@ foreach ($H3 AS $key => $value){
 
     if($key == 'Recent changes' OR $key == 'Authorizing your bot' OR $key == 'Making requests' OR $key == 'Using a Local Bot API Server'){
         $data = HTMLl2MD('<h3>'.$value, $url);
-        $file = TgEntity::$ParserFolderName.DIRECTORY_SEPARATOR.convertToCamelCase($key).'.md';
+        $file = BotApiEntity::$ParserFolderName.DIRECTORY_SEPARATOR.convertToCamelCase($key).'.md';
         file_put_contents($file, $data);
     }
     elseif ($key == 'Available methods' OR $key == 'Updating messages'){
@@ -419,7 +415,7 @@ foreach ($H3 AS $key => $value){
     elseif($key == 'Available types'){
         $h4exploaded =  explode('<h4>', $value);
         foreach ($h4exploaded as $h4){
-            if($newType = TgType::parseHtml($h4)){
+            if($newType = BotApiType::parseHtml($h4)){
                 $Types[] = $newType;
             }
         }
@@ -431,7 +427,7 @@ foreach ($H3 AS $key => $value){
         $h4exploaded =  explode('<h4>', $value);
         foreach ($h4exploaded as $h4){
             $r = $h4;
-            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfStickers)){
+            if($newType = BotApiType::parseHtml($h4) AND in_array($newType->name, $TypesOfStickers)){
                 $Types[] = $newType;
             }
         }
@@ -471,7 +467,7 @@ foreach ($H3 AS $key => $value){
         $h4exploaded =  explode('<h4>', $value);
         foreach ($h4exploaded as $h4){
             $r = $h4;
-            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfPayments)){
+            if($newType = BotApiType::parseHtml($h4) AND in_array($newType->name, $TypesOfPayments)){
                 $Types[] = $newType;
             }
         }
@@ -484,7 +480,7 @@ foreach ($H3 AS $key => $value){
         $h4exploaded =  explode('<h4>', $value);
         foreach ($h4exploaded as $h4){
             $r = $h4;
-            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfGames)){
+            if($newType = BotApiType::parseHtml($h4) AND in_array($newType->name, $TypesOfGames)){
                 $Types[] = $newType;
             }
         }
@@ -500,7 +496,7 @@ foreach ($H3 AS $key => $value){
         foreach ($h4exploaded as $h4){
             $r = $h4;
             //Тут от обратного. Много обьектов и только 2 метода
-            if($newType = TgType::parseHtml($h4) AND !in_array($newType->name, $MethodOfInline)){
+            if($newType = BotApiType::parseHtml($h4) AND !in_array($newType->name, $MethodOfInline)){
                 $Types[] = $newType;
             }
         }
@@ -520,7 +516,7 @@ foreach ($H3 AS $key => $value){
         $h4exploaded =  explode('<h4>', $value);
         foreach ($h4exploaded as $h4){
             $r = $h4;
-            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfUpdates)){
+            if($newType = BotApiType::parseHtml($h4) AND in_array($newType->name, $TypesOfUpdates)){
                 $Types[] = $newType;
             }
         }
@@ -549,7 +545,7 @@ foreach ($H3 AS $key => $value){
         $h4exploaded =  explode('<h4>', $value);
         foreach ($h4exploaded as $h4){
             $r = $h4;
-            if($newType = TgType::parseHtml($h4) AND in_array($newType->name, $TypesOfPassport)){
+            if($newType = BotApiType::parseHtml($h4) AND in_array($newType->name, $TypesOfPassport)){
                 $Types[] = $newType;
             }
         }
@@ -573,12 +569,12 @@ foreach ($H3 AS $key => $value){
 
 //
 foreach($Types AS $Type){
-    if($Type instanceof TgEntity){
+    if($Type instanceof BotApiEntity){
         $Type->__Save();
     }
 }
 
-$AllEntityTypes = TgParamEntity::GetAllTypes();
-$AllTgTypes = TgType::GetAllTgTypes();
+$AllEntityTypes = ParamForBotApiType::GetAllTypes();
+$AllTgTypes = BotApiType::GetAllTgTypes();
 
 
