@@ -1,4 +1,32 @@
 <?php
+class Log {
+    private string $log;
+    public function Add(mixed $log){
+        $this->log .= $log.PHP_EOL;
+    }
+    public function Echo()    {
+        echo $this->log;
+    }
+    private static ?Log $instance = null;
+    public static function getInstance(): Log
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
+    private function __construct()    {
+        $this->log = '';
+    }
+    private function __clone()    {
+    }
+
+}
+
+
+
 $url = 'https://core.telegram.org/bots/api';
 
 /*
@@ -322,7 +350,11 @@ class BotApiType extends BotApiEntity
         $data .=$data4constructor.PHP_EOL.'}';
         $data .= PHP_EOL.'}'.PHP_EOL;
 
-        return file_put_contents($filename, $data);
+        $log = Log::getInstance();
+
+        $saved = file_put_contents($filename, $data);
+        $log->Add('file '.$filename.' Saved:'.($saved?'YES':'NO'));
+        return $saved;
     }
 }
 class ParamForBotApiType{
@@ -644,8 +676,6 @@ foreach ($H3 AS $key => $value){
             }
         }
 
-
-        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
     }
     elseif($key == 'Available types'){
         $h4exploaded =  explode('<h4>', $value);
@@ -666,7 +696,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
-        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
+        echo 'Stickers будут сохранены как Types ';
     }
     elseif($key == 'Payments'){
         $TypesOfPayments = [
@@ -706,7 +736,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
-        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
+        echo 'Payments будут сохранены как Types ';
     }
     elseif($key == 'Games'){
         $TypesOfGames = ['Game', 'CallbackGame', 'GameHighScore',  ];
@@ -719,7 +749,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
-        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
+
     }
     elseif($key == 'Inline mode'){
 
@@ -735,7 +765,7 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
-        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
+
     }
     elseif($key == 'Getting updates'){
         $TypesOfUpdates = [
@@ -784,25 +814,12 @@ foreach ($H3 AS $key => $value){
                 $Types[] = $newType;
             }
         }
-        echo ' тут нужен обработчик по сохраниению методов. Строка: '.__LINE__.PHP_EOL;
+
     }
 
 
 }
 
-//if(isset($H3['Available types'])){
-//    $for_expload = $H3['Available types'];
-//    $h4exploaded =  explode('<h4>', $for_expload);
-//    foreach ($h4exploaded as $h4){
-//        if($newType = TgType::parseHtml($h4)){
-//            $Types[] = $newType;
-//        }
-//
-//    }
-//}
-
-
-//
 foreach($Types AS $Type){
     if($Type instanceof BotApiEntity){
         $Type->__Save();
@@ -816,5 +833,7 @@ foreach($Methods AS $Method){
 
 $AllEntityTypes = ParamForBotApiType::GetAllTypes();
 $AllTgTypes = BotApiType::GetAllTgTypes();
+
+Log::getInstance()->Echo();
 
 
