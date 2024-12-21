@@ -23,7 +23,7 @@ class ArrayOfAbstractObjects
     private function __clone(){}
 
     // Закрытый метод десериализации, чтобы предотвратить создание экземпляра через десериализацию
-    private function __wakeup(){}
+//    private function __wakeup(){}
 
     // Метод для получения единственного экземпляра класса
     public static function getInstance()

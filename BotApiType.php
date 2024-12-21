@@ -55,7 +55,7 @@ class BotApiType extends BotApiEntity{
     }
     public function __Save(string $namespace, string $folder):bool {
         $otstup = '            ';
-Throw new Exception('Тут нужно упоямнуть что расширяем асбстрактный класс елси да');
+
         $data = '<?php'.PHP_EOL.PHP_EOL.'namespace '.$namespace.';'.PHP_EOL.PHP_EOL;
         $data .= '/**'.PHP_EOL.'*    '.$this->desc;
         if(is_array($IsAbstract = AbstractObject::itIsAbstract($this->name))){
@@ -74,7 +74,12 @@ Throw new Exception('Тут нужно упоямнуть что расширя�
 
         }
         else{
+//            Throw new Exception('Тут нужно упоямнуть что расширяем асбстрактный класс елси да');
+
             $data .= 'readonly class '.$this->name;
+            if($MyFather =  AbstractObject::GiveMeMyFather($this->name)){
+                $data .= ' extends '.$MyFather->name;
+            }
 
             $data .= '{'.PHP_EOL;
             $data4constructor = 'public function __construct(array $input) {'.PHP_EOL;
@@ -176,7 +181,7 @@ Throw new Exception('Тут нужно упоямнуть что расширя�
                 else{
                     $array = AbstractObject::itIsAbstract($param->Type);
                     Log::getInstance()->Add('Не получлось обработать: '.$param->Type.' line '.__LINE__.' file:'.__FILE__);
-
+                    return false;
                 }
 
                 /**

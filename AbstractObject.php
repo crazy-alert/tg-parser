@@ -42,7 +42,7 @@ class AbstractObject {
         $data = '<?php'.PHP_EOL.PHP_EOL.'namespace '.$namespace.';'.PHP_EOL.PHP_EOL;
         $data .= '/**'.PHP_EOL.'*    '.implode(PHP_EOL.'*    ', explode("\n", $this->desc));
         $data .=PHP_EOL.'*/'.PHP_EOL;
-        $data .= 'abstract class '.$this->name.'{'.PHP_EOL.'}';
+        $data .= 'readonly abstract class '.$this->name.'{'.PHP_EOL.'}';
 
 
         $filename = $folder.DIRECTORY_SEPARATOR.$this->name.'.php';
@@ -54,6 +54,16 @@ class AbstractObject {
     static public function Add(string $name, array $childrens, ?string $desc):void{
         ArrayOfAbstractObjects::Add($name, $childrens, $desc);
     }
+
+    static public function GiveMeMyFather(string $name):static|false{
+        foreach (static::GetList() AS $value){
+            if(in_array($name, $value->childers)){
+                return $value;
+            }
+        }
+        return false;
+    }
+
 
 
 }
