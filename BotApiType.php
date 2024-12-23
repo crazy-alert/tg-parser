@@ -20,7 +20,6 @@ class BotApiType extends BotApiEntity{
         $this->params = $params;
 
         static::AddAllTgTypes($this);
-
     }
     public static function GetAllTgTypes():array
     {
@@ -126,7 +125,6 @@ class BotApiType extends BotApiEntity{
                 }
                 elseif(is_array($ArrayOfPossibleTypes = AbstractObject::itIsAbstract($param->Type))){ //если это абстрактный тип
                     $AllTgTypes = self::$AllTgTypes;
-//                    $type .= implode('|', $ArrayOfPossibleTypes);
                     $type .= $param->Type;
 
                     //это жуткий костыль
@@ -137,34 +135,39 @@ class BotApiType extends BotApiEntity{
                     foreach ($ArrayOfPossibleTypes as $keyObject => $object) {
 
                         if (array_key_exists($object, $AllTgTypes) AND ($AllTgTypes[$object] instanceof self)){
+//                            $data4constructor .= $otstup;
+//                            if($keyObject != 0 ){
+//                                $data4constructor .= 'else';
+//                            }
+//                            $data4constructor .= 'if(';
+//                            foreach ($AllTgTypes[$object]->params AS $keysubparam => $subparam){
+//                                if($keysubparam != 0 ){
+//                                    $data4constructor .=' AND '.PHP_EOL. $otstup.'   ';
+//                                }
+//                                $data4constructor .=' array_key_exists(\''.$subparam->Field.'\', $input) ';
+//                            }
+
+                            $RequariedKeysString = '[';
+                            foreach ($AllTgTypes[$object]->params AS $keysubparam => $subparam){
+                                if($keysubparam != 0 ){
+                                    $RequariedKeysString .=', ';
+                                }
+                                $RequariedKeysString .= '\''.$subparam->Field.'\'';
+                            }
+                            $RequariedKeysString .= ']';
 
                             $data4constructor .= $otstup;
                             if($keyObject != 0 ){
                                 $data4constructor .= 'else';
                             }
-                            $data4constructor .= 'if(';
-
-                            foreach ($AllTgTypes[$object]->params AS $keysubparam => $subparam){
-                                if($keysubparam != 0 ){
-                                    $data4constructor .=' AND '.PHP_EOL. $otstup.'   ';
-                                }
-                                $data4constructor .=' array_key_exists(\''.$subparam->Field.'\', $input) ';
-
-//                                    $log .= '      Field  :'.$subparam->Field.PHP_EOL;
-//                                    $log .= '      Type  :'.$subparam->Type.PHP_EOL;
-//                                    $log .= '      Description  :'.$subparam->Description.PHP_EOL;
-//                                    $log .= '      IsOptional  :'.$subparam->IsOptional.PHP_EOL;
-
-
-                            }
+                            $data4constructor .= 'if( !array_diff_key(array_flip($input), '.$RequariedKeysString.') AND count(array_diff_key(array_flip($input), '.$RequariedKeysString.')) === 0){';
                         }
-                        $data4constructor .= PHP_EOL.$otstup.'){';
+
                         $data4constructor .= PHP_EOL.$otstup.$otstup.'$this->'.$param->Field.' =  new '.$NamespacePath.$object.'($input);'.PHP_EOL.$otstup.'}'.PHP_EOL;
-
                     }
-
-                    $y = $data4constructor;
-
+                    if($param->IsOptional){
+                        $data4constructor .=$otstup.'else{'.PHP_EOL.$otstup.$otstup.'$this->'.$param->Field.' =  NULL;'.PHP_EOL.$otstup.'}'.PHP_EOL;
+                    }
                 }
                 elseif(str_starts_with($param->Type, 'Array')){
                     $type .='array';
@@ -179,7 +182,6 @@ class BotApiType extends BotApiEntity{
                     $data4constructor .='(string)$input["'.$param->Field.'"]';
                 }
                 else{
-                    $array = AbstractObject::itIsAbstract($param->Type);
                     Log::getInstance()->Add('Не получлось обработать: '.$param->Type.' line '.__LINE__.' file:'.__FILE__);
                     return false;
                 }
@@ -191,10 +193,14 @@ class BotApiType extends BotApiEntity{
                 $data .=' ('.$param->Type.') '.$param->Description.PHP_EOL.'*/'.PHP_EOL;
                 $data .= 'public '.$type;
                 $data .=' $'.$param->Field.';'.PHP_EOL;
-                if($param->IsOptional){
-                    $data4constructor .=' : NULL';
+                if(!is_array($ArrayOfPossibleTypes = AbstractObject::itIsAbstract($param->Type))){
+                    if($param->IsOptional){
+                        $data4constructor .=' : NULL';
+                    }
+                    $data4constructor .= ';'.PHP_EOL;
                 }
-                $data4constructor .= ';'.PHP_EOL;
+
+
             }
             $data .= PHP_EOL.PHP_EOL;
             $data .=$data4constructor.PHP_EOL.'}';

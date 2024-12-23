@@ -1,5 +1,14 @@
 <?php
 $url = 'https://core.telegram.org/bots/api';
+$dirForTypes = 'Parser';
+$dirForMethods = 'Parser';
+$dirForMD = 'Parser'.DIRECTORY_SEPARATOR.'Md';
+
+
+if($dirForTypes AND !file_exists($dirForTypes)){  mkdir($dirForTypes); }
+if($dirForMethods AND !file_exists($dirForMethods)){ mkdir($dirForMethods); }
+if($dirForMD AND !file_exists($dirForMD)){  mkdir($dirForMD); }
+
 $OnlyMDs = [
     'Recent changes',
     'Authorizing your bot',
@@ -176,15 +185,15 @@ foreach ($h4exploaded as $h4){
         }
 }
 
-$rootDir = BotApiEntity::$ParserFolderName;
-if(!file_exists($rootDir)){  mkdir($rootDir); }
+
+
 foreach ($MDs AS $MD){
-    $file = $rootDir.DIRECTORY_SEPARATOR.convertToCamelCase($MD->title).'.md';
+    $file = $dirForMD.DIRECTORY_SEPARATOR.convertToCamelCase($MD->title).'.md';
     $result = file_put_contents($file, $MD->body);
 }
 
-$dirForTypes =  $rootDir.DIRECTORY_SEPARATOR.BotApiType::$EntityFolderName;
-if(!file_exists($dirForTypes)){ mkdir($dirForTypes); }
+
+
 foreach($Types AS $Type){
     if($Type instanceof BotApiType){
         $result = $Type -> __Save( namespace: $dirForTypes, folder: $dirForTypes);
@@ -199,13 +208,32 @@ foreach($AbstractTypes AS $AbstractType){
 
 
 
-$dirForMethods =  $rootDir.DIRECTORY_SEPARATOR.BotApiMethod::$EntityFolderName;
-if(!file_exists($dirForMethods)){ mkdir($dirForMethods); }
+//$dirForMethods =  $rootDir.DIRECTORY_SEPARATOR.BotApiMethod::$EntityFolderName;
+$StringMethods = '';
+
 foreach($Methods AS $Method){
     if($Method instanceof  BotApiMethod){
-        $result = $Method -> __Save( namespace: $dirForMethods, folder: $dirForMethods);
+        $StringMethods .= $Method -> __ToString().PHP_EOL;
+         //$result = $Method -> __Save( namespace: $dirForMethods, folder: $dirForMethods);
     }
 }
+$ClassName = '__Methods';
+if($dirForMethods){
+    $file = $dirForMethods.DIRECTORY_SEPARATOR.$ClassName;
+}
+else{
+    $file = $ClassName;
+}
+$file .= '.php';
+$data = '<?php'.PHP_EOL;
+if($dirForMethods){
+    $data .= 'namespace '.$dirForMethods.';'.PHP_EOL;
+}
+$data .= 'abstract class '.$ClassName.'{'.PHP_EOL;
+$data .= ' abstract function send(string $method, array $parameters = []):array;'.PHP_EOL;
+$data .= $StringMethods.PHP_EOL;
+$data .= '}';
+file_put_contents($file, $data);
 
 
 $r = $undefindEntity;

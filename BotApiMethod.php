@@ -10,7 +10,6 @@ class BotApiMethod extends BotApiEntity {
 
     }
     public static array $AllTgMethods = [];
-    public static ?string $EntityFolderName = 'Methods' ;
     public static function GetAllTgMethods():array
     {
         return self::$AllTgMethods;
@@ -72,8 +71,6 @@ class BotApiMethod extends BotApiEntity {
     }
     public function __Save(string $namespace, string $folder): bool{
 
-        $folder = self::$ParserFolderName;
-        $namespace = $folder;
         $DOCBlockForClass = $this->desc;
         $dataImport = '';
 
@@ -135,29 +132,22 @@ class BotApiMethod extends BotApiEntity {
                     $dataImport .= 'use \\'.BotApiType::$ParserFolderName.'\\'.BotApiType::$EntityFolderName.'\\'.$newType.';'.PHP_EOL;
                     $typeStr .=  $newType;
 
-
-
                 }
                 elseif (str_ends_with($param->Type, ' or String')){
                     $typeStr = 'string';
                 }
-
-
                 elseif($param->Type == 'InputFile'){
                     $typeStr = 'string';
                 }
                 elseif($param->Type == 'BotCommandScope'){
                     $typeStr = 'string';
                 }
-
                 else{
                     $typeStr = 'string //но это не точно';
 //                       Throw new Exception('Такого мы ждали. Очень неожиданно');
                 }
 
-
                 $data4constructor .= '         '.$typeStr.' $'.$param->Parameter;
-
                 if($param->Required == 'Optional'){
                     $data4constructor .=' = NULL';
                     $AddQuot = '?';
@@ -178,7 +168,6 @@ class BotApiMethod extends BotApiEntity {
                 $data4constructor .= '                  $this->parameters[\''.$param->Parameter.'\'] = ';
                 $data4constructor .= '$'.$param->Parameter.' ;'.PHP_EOL;
             }
-
 
         }
         else{
@@ -206,5 +195,87 @@ class BotApiMethod extends BotApiEntity {
         $data .= '}';
 
         return file_put_contents($filename, $data);
+    }
+
+    public function __ToString():string{
+        $otstup = '    ';
+        $ArgumentForFunction = '';
+        $ArrayParamsForSend = $otstup.'$parameters = [];'.PHP_EOL;
+        $return ='/**'.PHP_EOL;
+        $return .=' * '. $this->desc.PHP_EOL;
+
+
+
+
+        $count = 0;
+        foreach ($this->params as $param) {
+            /**
+             * @var \ParamForBotApiMethods $param
+             */
+
+            if($param->Type == 'String'){
+                $typeStr = 'string';
+            }
+            elseif ($param->Type == 'Boolean'){
+                $typeStr = 'bool';
+            }
+            elseif ($param->Type == 'Integer'){
+                $typeStr = 'int';
+            }
+            elseif ($param->Type == 'Integer or String'){
+                $typeStr = 'int';
+            }
+            elseif ($param->Type == 'Float'){
+                $typeStr = 'float|int';
+            }
+            elseif (str_starts_with($param->Type, 'Array of')){
+                $typeStr = 'array';
+            }
+            elseif (array_key_exists($param->Type, BotApiType::GetAllTgTypes())){
+                $typeStr = $param->Type;
+            }
+            elseif( $param->Type = 'InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardRemove or ForceReply'){
+                $typeStr = 'InlineKeyboardMarkup|ReplyKeyboardMarkup|ReplyKeyboardRemove|ForceReply';
+            }
+            else{
+                Throw new Exception('Передан неизвестный тип аргумента');
+            }
+
+
+            if($count != 0 ){
+                $ArgumentForFunction .= ', ';
+            }
+
+            $return .= ' * @param '.$typeStr;
+
+            $ArgumentForFunction .= $typeStr.' $'.$param->Parameter;
+            if($param->Required === 'Optional'){
+//                $ArgumentForFunction .= ' ?';
+                $return .= '|null ';
+                $ArgumentForFunction .= ' = NULL';
+            }
+
+
+            $return .= ' $'.$param->Parameter.' '.$param->Description.PHP_EOL;
+
+            $ArrayParamsForSend .= $otstup.'if($'.$param->Parameter.' != NULL){ $parameters[\''.$param->Parameter.'\'] = $'.$param->Parameter.' ;}'.PHP_EOL;
+            
+
+            $count++;
+
+        }
+
+
+
+
+        $return .= ' */'.PHP_EOL;
+        $return .= 'public function '.$this->name.'('.$ArgumentForFunction.'):array{'.PHP_EOL;
+        $return .= $ArrayParamsForSend;
+        $return .= PHP_EOL.$otstup.'return $this->send(\''.$this->name.'\', $parameters );';
+        $return .= PHP_EOL.'}'.PHP_EOL;
+
+
+
+        return $return;
     }
 }
