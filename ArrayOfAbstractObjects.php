@@ -3,7 +3,7 @@
 
 class ArrayOfAbstractObjects
 {
-    private static $instance = null;
+    private static ?ArrayOfAbstractObjects $instance = null;
     private array $list;
     public static function Add(string $name, ?array $childrens, ?string $desc):void {
         (self::getInstance())->list[$name] = new AbstractObject($name,  $childrens, $desc);

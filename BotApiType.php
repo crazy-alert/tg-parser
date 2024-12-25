@@ -160,7 +160,7 @@ class BotApiType extends BotApiEntity{
                             if($keyObject != 0 ){
                                 $data4constructor .= 'else';
                             }
-                            $data4constructor .= 'if( !array_diff_key(array_flip($input), '.$RequariedKeysString.') AND count(array_diff_key(array_flip($input), '.$RequariedKeysString.')) === 0){';
+                            $data4constructor .= 'if(count(array_diff_key('.$RequariedKeysString.', $input)) === 0){';
                         }
 
                         $data4constructor .= PHP_EOL.$otstup.$otstup.'$this->'.$param->Field.' =  new '.$NamespacePath.$object.'($input);'.PHP_EOL.$otstup.'}'.PHP_EOL;
