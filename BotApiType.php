@@ -152,7 +152,7 @@ class BotApiType extends BotApiEntity{
                                 if($keysubparam != 0 ){
                                     $RequariedKeysString .=', ';
                                 }
-                                $RequariedKeysString .= '\''.$subparam->Field.'\'';
+                                $RequariedKeysString .= '\''.$subparam->Field.'\'=>\'\'';
                             }
                             $RequariedKeysString .= ']';
 
