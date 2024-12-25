@@ -160,13 +160,18 @@ class BotApiType extends BotApiEntity{
                             if($keyObject != 0 ){
                                 $data4constructor .= 'else';
                             }
-                            $data4constructor .= 'if(count(array_diff_key('.$RequariedKeysString.', $input)) === 0){';
+                            $data4constructor .= 'if(';
+                            if($param->IsOptional){$data4constructor .= 'array_key_exists(\''.$param->Field.'\', $input) AND '; }
+                            $data4constructor .= 'count(array_diff_key('.$RequariedKeysString.', $input[\''.$param->Field.'\'])) === 0){';
                         }
 
-                        $data4constructor .= PHP_EOL.$otstup.$otstup.'$this->'.$param->Field.' =  new '.$NamespacePath.$object.'($input);'.PHP_EOL.$otstup.'}'.PHP_EOL;
+                        $data4constructor .= PHP_EOL.$otstup.$otstup.'$this->'.$param->Field.' =  new '.$NamespacePath.$object.'($input[\''.$param->Field.'\']);'.PHP_EOL.$otstup.'}'.PHP_EOL;
                     }
                     if($param->IsOptional){
                         $data4constructor .=$otstup.'else{'.PHP_EOL.$otstup.$otstup.'$this->'.$param->Field.' =  NULL;'.PHP_EOL.$otstup.'}'.PHP_EOL;
+                    }
+                    else{
+                        $data4constructor .=$otstup.'else{'.PHP_EOL.$otstup.$otstup.'Throw new \Exception(\'ашипко\');'.PHP_EOL.$otstup.'}'.PHP_EOL.PHP_EOL;
                     }
                 }
                 elseif(str_starts_with($param->Type, 'Array')){
@@ -208,8 +213,11 @@ class BotApiType extends BotApiEntity{
         }
 
         $filename = $folder.DIRECTORY_SEPARATOR.$this->name.'.php';
+
         $saved = file_put_contents($filename, $data);
-//        Log::getInstance()->Add('file '.$filename.' Saved:'.($saved?'YES':'NO'));
+        Log::getInstance()->Add('  '.$filename.' Saved:'.($saved?'YES':'NO'));
+
+//
         return $saved;
     }
 }
