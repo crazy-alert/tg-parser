@@ -120,7 +120,7 @@ class BotApiType extends BotApiEntity{
                     $data4constructor .='(float)$input["'.$param->Field.'"]';
                 }
                 elseif($param->Type == 'True'){
-                    $type .='true';
+                    $type .='bool';
                     $data4constructor .='(bool)$input["'.$param->Field.'"]';
                 }
                 elseif(is_array($ArrayOfPossibleTypes = AbstractObject::itIsAbstract($param->Type))){ //если это абстрактный тип
