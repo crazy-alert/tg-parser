@@ -1,41 +1,30 @@
 <?php
 
 
-class AbstractObject {
-    public readonly string $name;
-    public readonly array $childers;
-    public readonly string  $desc;
+readonly class AbstractObject {
+    public string $name;
+    public array $chields;
+    public string  $desc;
 
-    public static function itIsAbstract(string $name):array|false {
-        $array = ArrayOfAbstractObjects::getInstance()->GetList();
-        if(is_array($array) AND array_key_exists($name, $array) AND ($array[$name] instanceof self)){
-            return $array[$name]->childers;
-        }
-        return false;
-    }
-    public function __construct(string $name, ?array $childers, ?string $desc){
+    public function __construct(string $name, ?array $chields, ?string $desc){
         $this->name   = $name;
-        $this->childers   = $childers;
+        $this->chields   = $chields;
         $this->desc   = $desc;
 
+    }
 
-//        $this->ObjectsList = [  'ChatMember' ,
-//                                'MessageOrigin',
-//                                'PaidMedia',
-//                                'BackgroundFill',
-//                                'BackgroundType',
-//                                'ReactionType',
-//                                'ChatBoostSource',
-//                                'InputPaidMedia',
-//                                'RevenueWithdrawalState',
-//                                'PassportElementError',
-//                                'InlineQueryResult',
-//            ];
+    public static function GetChildrens(string $name):array|false{
+        $ArrayOfAbstarct = StorageSingleton::GetAbstractList();
+        if(array_key_exists($name, $ArrayOfAbstarct) AND $ArrayOfAbstarct[$name] instanceof AbstractObject){
+            if(is_array($ArrayOfAbstarct[$name]->chields)){
+                return $ArrayOfAbstarct[$name]->chields;
+            }
 
+        }
+        return false;
 
     }
-    public function __Save(string $namespace, string $folder):bool
-    {
+    public function __Save(string $namespace, string $folder):bool{
         $otstup = '            ';
         $deascarray = explode('\n', $this->desc);
 
@@ -46,23 +35,9 @@ class AbstractObject {
 
 
         $filename = $folder.DIRECTORY_SEPARATOR.$this->name.'.php';
-       return file_put_contents($filename, $data);
-    }
-    static public function GetList():array{
-        return ArrayOfAbstractObjects::getInstance()->GetList();
-    }
-    static public function Add(string $name, array $childrens, ?string $desc):void{
-        ArrayOfAbstractObjects::Add($name, $childrens, $desc);
+        return file_put_contents($filename, $data);
     }
 
-    static public function GiveMeMyFather(string $name):static|false{
-        foreach (static::GetList() AS $value){
-            if(in_array($name, $value->childers)){
-                return $value;
-            }
-        }
-        return false;
-    }
 
 
 

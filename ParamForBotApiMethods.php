@@ -14,5 +14,5 @@ class ParamForBotApiMethods {
         $this->Description = $Description;
     }
 
-    public static Array $AllTypes = [];
+
 }

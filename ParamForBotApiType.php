@@ -21,11 +21,6 @@ class ParamForBotApiType{
         $this->IsOptional = $IsOptional;
         $this->Description = $Description;
     }
-    public static function GetAllTypes():array
-    {
-        return array_unique(static::$AllTypes);
-    }
-
     public static function parseHtml($htmlWithTable):array{
         $Array = [];
         preg_match_all( '~<tbody>[\w|\W]+</tbody>~', $htmlWithTable, $matches );

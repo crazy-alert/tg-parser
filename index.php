@@ -3,17 +3,17 @@ $url = 'https://core.telegram.org/bots/api';
 $dirForTypes = 'Parser';
 $dirForMethods = 'Parser';
 $dirForMD = 'Parser'.DIRECTORY_SEPARATOR.'Md';
-$OneFileName = '__ParserClassUpdater.php';
 
-if($OneFileName != '' AND basename(__FILE__) != $OneFileName  ){
+
+//START_FOR_CLEAR
+$OneFileName = '__ParserClassUpdater.php';
+if($OneFileName != '' AND basename(__FILE__) != $OneFileName AND false){
     $files = scandir(__DIR__);
     $data = file_get_contents(__FILE__);
-
-    $data = preg_replace('/^require_once.*?;\s*$/m', '', $data);
-    $data = preg_replace('/^spl_autoload_register.*?;\s*$/m', '', $data);
+    $data = preg_replace('/\/\/START_FOR_CLEAR.*?\/\/_END_FOR_CLEAR/s', '', $data);
 
     foreach ($files as $file){
-        if(str_starts_with($file, '.') OR str_starts_with($file, 'index') OR $file == $OneFileName){
+        if(str_starts_with($file, '.') OR str_starts_with($file, 'index') OR $file == $OneFileName OR is_dir($file)){
             continue;
         }
 
@@ -22,6 +22,9 @@ if($OneFileName != '' AND basename(__FILE__) != $OneFileName  ){
     }
     file_put_contents($OneFileName, $data);
 }
+spl_autoload_register(function($name) {$file = __DIR__ . DIRECTORY_SEPARATOR . $name . '.php';if(file_exists($file)){require_once $file;}});
+require_once 'convertToCamelCase.php';
+//_END_FOR_CLEAR
 
 
 if($dirForTypes AND !file_exists($dirForTypes)){  mkdir($dirForTypes); }
@@ -32,12 +35,11 @@ $OnlyMDs = [
     'Recent changes',
     'Authorizing your bot',
     'Making requests',
-    'Getting updates',
+    //'Getting updates',
     'Formatting options',
     'Using a Local Bot API Server'
 ];
-spl_autoload_register(function($name) {$file = __DIR__ . DIRECTORY_SEPARATOR . $name . '.php';if(file_exists($file)){require_once $file;}});
-require_once 'convertToCamelCase.php';
+
 
 /*
  FOR ABSTARCT
@@ -152,14 +154,12 @@ curl_setopt($ch, CURLOPT_HEADER, false);
 $html = curl_exec($ch);
 curl_close($ch);
 
-$Types = [];
-$Methods = [];
+
 $MDs = [];
 $h4exploaded = [];
 $h3exploded = explode('<h3>', $html);
 foreach ($h3exploded as $item => $h3){
     preg_match_all( '~</a>[\w\s]+</h3>~', $h3, $h3item );
-
     if(isset($h3item[0][0])){
         $key =  strip_tags($h3item[0][0]);
         $body = $h3;
@@ -179,7 +179,7 @@ foreach ($h4exploaded as $h4){
 
         if ((str_contains($h4, '<th>Field</th>') and str_contains($h4, '<th>Type</th>')) OR (str_contains($h4, '<p>This object represents'))  ) {
             try {
-                $Types[] = BotApiType::createType($h4);
+                $Types[] = BotApiType::ParseHtmlForCreateType($h4);
             }
             catch (Throwable $e) {
                 echo $h4, ' Исключение: ', $e->getMessage(), PHP_EOL;
@@ -194,9 +194,15 @@ foreach ($h4exploaded as $h4){
             }
         }
         elseif(is_array($extendeds[2]) AND count($extendeds[2])){
-             preg_match_all( '~</a>[\w\s]+</h4>~', $h4, $matches );
+                preg_match_all( '~</a>[\w\s]+</h4>~', $h4, $matches );
 
-            AbstractObject::Add(strip_tags($matches[0][0]), $extendeds[2], strip_tags($h4));
+                $AbstractObject = new AbstractObject(
+                                                    name: strip_tags($matches[0][0]),
+                                                    chields: $extendeds[2],
+                                                    desc:strip_tags($h4)
+                                                );
+                StorageSingleton::AddAbstractToList($AbstractObject);
+
 
        }
         else {
@@ -213,16 +219,12 @@ foreach ($MDs AS $MD){
 
 
 
-foreach($Types AS $Type){
-    if($Type instanceof BotApiType){
-        $result = $Type -> __Save( namespace: $dirForTypes, folder: $dirForTypes);
-    }
+foreach(StorageSingleton::GetApiTypeList() AS $Type){
+    $result = $Type -> __Save( namespace: $dirForTypes, folder: $dirForTypes);
 }
-$AbstractTypes = AbstractObject::GetList();
-foreach($AbstractTypes AS $AbstractType){
-    if($AbstractType instanceof AbstractObject){
-        $result = $AbstractType -> __Save( namespace: $dirForTypes, folder: $dirForTypes);
-    }
+
+foreach(StorageSingleton::GetAbstractList() AS $AbstractType){
+    $AbstractType -> __Save( namespace: $dirForTypes, folder: $dirForTypes);
 }
 
 
@@ -230,11 +232,8 @@ foreach($AbstractTypes AS $AbstractType){
 //$dirForMethods =  $rootDir.DIRECTORY_SEPARATOR.BotApiMethod::$EntityFolderName;
 $StringMethods = '';
 
-foreach($Methods AS $Method){
-    if($Method instanceof  BotApiMethod){
-        $StringMethods .= $Method -> __ToString().PHP_EOL;
-         //$result = $Method -> __Save( namespace: $dirForMethods, folder: $dirForMethods);
-    }
+foreach(StorageSingleton::GetMethodsList() AS $Method){
+    $StringMethods .= $Method -> __ToString().PHP_EOL;
 }
 $ClassName = '__Methods';
 if($dirForMethods){
@@ -254,8 +253,28 @@ $data .= $StringMethods.PHP_EOL;
 $data .= '}';
 file_put_contents($file, $data);
 
+$Storage = StorageSingleton::GetApiTypeList() ;
 
-$r = $undefindEntity;
+$folderForTests = 'Tests';
+if(file_exists($folderForTests)){
+    $files = scandir($folderForTests);
+    foreach ($files AS $file){
+        if(str_starts_with($file, '.')){
+            continue;
+        }
+
+        Log::getInstance()->Add('               !!! Выполняется тест: '. $file);
+        try {
+            $r = include($folderForTests.DIRECTORY_SEPARATOR.$file);
+            Log::getInstance()->Add('               !!!  Ошибок нет '. $file);
+        }
+        catch (Throwable $e){
+            Log::getInstance()->Add('     !!!!!!!!!!!!!!    Тест провален: '.$e);
+        }
+
+
+    }
+}
 Log::getInstance()->Echo();
 
 

@@ -9,11 +9,8 @@ class BotApiMethod extends BotApiEntity {
         $this->params = $params;
 
     }
-    public static array $AllTgMethods = [];
-    public static function GetAllTgMethods():array
-    {
-        return self::$AllTgMethods;
-    }
+
+
 
     /**
      * @throws Exception
@@ -63,11 +60,15 @@ class BotApiMethod extends BotApiEntity {
         }
 
 
-        self::$AllTgMethods[] = $name;
-        return new static(  name: $name,
+        $newMethod =  new self(
+            name: $name,
             desc: $desc,
             params: $params
         );
+
+        StorageSingleton::AddMethod($newMethod);
+
+        return $newMethod;
     }
     public function __Save(string $namespace, string $folder): bool{
 
@@ -231,13 +232,16 @@ class BotApiMethod extends BotApiEntity {
             elseif (str_starts_with($param->Type, 'Array of')){
                 $typeStr = 'array';
             }
-            elseif (array_key_exists($param->Type, BotApiType::GetAllTgTypes())){
+            elseif (array_key_exists($param->Type, StorageSingleton::GetAbstractAndNonAbstractTypes())){
                 $typeStr = $param->Type;
             }
             elseif( $param->Type == 'InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardRemove or ForceReply'){
                 $typeStr = 'InlineKeyboardMarkup|ReplyKeyboardMarkup|ReplyKeyboardRemove|ForceReply';
             }
             elseif($param->Type =='InputFile or String'){
+                $typeStr = 'string';
+            }
+            elseif($param->Type == 'MenuButton'){
                 $typeStr = 'string';
             }
             else{
