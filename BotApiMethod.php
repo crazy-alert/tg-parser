@@ -234,7 +234,7 @@ class BotApiMethod extends BotApiEntity {
             elseif (array_key_exists($param->Type, BotApiType::GetAllTgTypes())){
                 $typeStr = $param->Type;
             }
-            elseif( $param->Type = 'InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardRemove or ForceReply'){
+            elseif( $param->Type == 'InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardRemove or ForceReply'){
                 $typeStr = 'InlineKeyboardMarkup|ReplyKeyboardMarkup|ReplyKeyboardRemove|ForceReply';
             }
             else{
