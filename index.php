@@ -3,6 +3,25 @@ $url = 'https://core.telegram.org/bots/api';
 $dirForTypes = 'Parser';
 $dirForMethods = 'Parser';
 $dirForMD = 'Parser'.DIRECTORY_SEPARATOR.'Md';
+$OneFileName = '__ParserClassUpdater.php';
+
+if($OneFileName != '' AND basename(__FILE__) != $OneFileName  ){
+    $files = scandir(__DIR__);
+    $data = file_get_contents(__FILE__);
+
+    $data = preg_replace('/^require_once.*?;\s*$/m', '', $data);
+    $data = preg_replace('/^spl_autoload_register.*?;\s*$/m', '', $data);
+
+    foreach ($files as $file){
+        if(str_starts_with($file, '.') OR str_starts_with($file, 'index') OR $file == $OneFileName){
+            continue;
+        }
+
+        $data .= file_get_contents($file, offset: 6);
+
+    }
+    file_put_contents($OneFileName, $data);
+}
 
 
 if($dirForTypes AND !file_exists($dirForTypes)){  mkdir($dirForTypes); }

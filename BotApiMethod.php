@@ -237,6 +237,9 @@ class BotApiMethod extends BotApiEntity {
             elseif( $param->Type == 'InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardRemove or ForceReply'){
                 $typeStr = 'InlineKeyboardMarkup|ReplyKeyboardMarkup|ReplyKeyboardRemove|ForceReply';
             }
+            elseif($param->Type =='InputFile or String'){
+                $typeStr = 'string';
+            }
             else{
                 Throw new Exception('Передан неизвестный тип аргумента');
             }
