@@ -3,11 +3,11 @@ $url = 'https://core.telegram.org/bots/api';
 $dirForTypes = 'Parser';
 $dirForMethods = 'Parser';
 $dirForMD = 'Parser'.DIRECTORY_SEPARATOR.'Md';
-
+$fileForCash = '.core_telegram_org_bots_api';// установить в false для отмены
 
 //START_FOR_CLEAR
 $OneFileName = '__ParserClassUpdater.php';
-$fileForCash = '.core_telegram_org_bots_api';// установить в false для отмены
+
 if($OneFileName != '' AND basename(__FILE__) != $OneFileName ){
     $files = scandir(__DIR__);
     $data = file_get_contents(__FILE__);
