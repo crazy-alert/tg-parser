@@ -1,6 +1,4 @@
 <?php
-
-
 abstract class BotApiEntity{
 
     static string $ParserFolderName = 'TelegramApi';

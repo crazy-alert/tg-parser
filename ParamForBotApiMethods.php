@@ -1,6 +1,4 @@
 <?php
-
-
 class ParamForBotApiMethods {
     public string $Parameter;
     public string $Type;

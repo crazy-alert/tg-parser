@@ -1,5 +1,4 @@
 <?php
-
 function convertToCamelCase(string $string):string {
     // Удаляем лишние пробелы
     $string = trim($string);

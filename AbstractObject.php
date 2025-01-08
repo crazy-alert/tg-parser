@@ -1,6 +1,4 @@
 <?php
-
-
 readonly class AbstractObject {
     public string $name;
     public array $chields;
@@ -31,7 +29,10 @@ readonly class AbstractObject {
         $data = '<?php'.PHP_EOL.PHP_EOL.'namespace '.$namespace.';'.PHP_EOL.PHP_EOL;
         $data .= '/**'.PHP_EOL.'*    '.implode(PHP_EOL.'*    ', explode("\n", $this->desc));
         $data .=PHP_EOL.'*/'.PHP_EOL;
-        $data .= 'readonly abstract class '.$this->name.'{'.PHP_EOL.'}';
+        $data .= 'readonly abstract class '.$this->name.'{';
+
+
+        $data .= PHP_EOL.'}';
 
 
         $filename = $folder.DIRECTORY_SEPARATOR.$this->name.'.php';

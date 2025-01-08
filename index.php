@@ -9,18 +9,16 @@ $fileForCash = '.core_telegram_org_bots_api';// установить в false д
 $OneFileName = '__ParserClassUpdater.php';
 
 if($OneFileName != '' AND basename(__FILE__) != $OneFileName ){
-    $files = scandir(__DIR__);
-    $data = file_get_contents(__FILE__);
-    $data = preg_replace('/\/\/START_FOR_CLEAR.*?\/\/_END_FOR_CLEAR/s', '', $data);
+    $data = '<?php'.PHP_EOL.PHP_EOL;
 
+    $files = scandir(__DIR__);
     foreach ($files as $file){
-        if(str_starts_with($file, '.') OR str_starts_with($file, 'index') OR $file == $OneFileName OR is_dir($file)){
+        if(str_starts_with($file, '.') OR $file ==basename(__FILE__) OR $file == $OneFileName OR is_dir($file)){
             continue;
         }
-
         $data .= file_get_contents($file, offset: 6);
-
     }
+    $data .= preg_replace('/\/\/START_FOR_CLEAR.*?\/\/_END_FOR_CLEAR/s', '',file_get_contents(__FILE__, offset: 6));
     file_put_contents($OneFileName, $data);
 }
 spl_autoload_register(function($name) {$file = __DIR__ . DIRECTORY_SEPARATOR . $name . '.php';if(file_exists($file)){require_once $file;}});

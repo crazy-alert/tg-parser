@@ -1,6 +1,4 @@
 <?php
-
-
 class BotApiMethod extends BotApiEntity {
     public function __construct(string $name, string|null $desc, array $params)
     {

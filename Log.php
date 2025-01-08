@@ -1,5 +1,4 @@
 <?php
-
 class Log {
     private string $log;
     public function Add(mixed $log): void

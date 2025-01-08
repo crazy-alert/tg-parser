@@ -1,6 +1,4 @@
 <?php
-
-
 class StorageSingleton
 {
     private static ?StorageSingleton $instance = null;
