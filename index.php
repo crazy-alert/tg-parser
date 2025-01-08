@@ -7,7 +7,8 @@ $dirForMD = 'Parser'.DIRECTORY_SEPARATOR.'Md';
 
 //START_FOR_CLEAR
 $OneFileName = '__ParserClassUpdater.php';
-if($OneFileName != '' AND basename(__FILE__) != $OneFileName AND false){
+$fileForCash = '.core_telegram_org_bots_api';// установить в false для отмены
+if($OneFileName != '' AND basename(__FILE__) != $OneFileName ){
     $files = scandir(__DIR__);
     $data = file_get_contents(__FILE__);
     $data = preg_replace('/\/\/START_FOR_CLEAR.*?\/\/_END_FOR_CLEAR/s', '', $data);
@@ -147,12 +148,25 @@ This object represents one result of an inline query. Telegram clients currently
         InlineQueryResultVoice
 */
 
-$ch = curl_init($url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-curl_setopt($ch, CURLOPT_HEADER, false);
-$html = curl_exec($ch);
-curl_close($ch);
+$date = getdate();
+$fileForCashWithDate = $fileForCash.'-'.$date['year'].'-'.$date['yday'];
+if(file_exists($fileForCashWithDate) ){
+    $html = file_get_contents($fileForCashWithDate);
+}
+else{
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    $html = curl_exec($ch);
+    curl_close($ch);
+    if(isset($fileForCash) AND $fileForCash){
+        file_put_contents($fileForCashWithDate, $html);
+    }
+}
+
+
+
 
 
 $MDs = [];
@@ -263,13 +277,13 @@ if(file_exists($folderForTests)){
             continue;
         }
 
-        Log::getInstance()->Add('               !!! Выполняется тест: '. $file);
+        Log::getInstance()->Add('               🧑‍💻 🧑‍💻 🧑‍💻 Выполняется тест: '. $file);
         try {
             $r = include($folderForTests.DIRECTORY_SEPARATOR.$file);
-            Log::getInstance()->Add('               !!!  Ошибок нет '. $file);
+            Log::getInstance()->Add('               ✅ ✅ ✅Тест выполнен успешно ✅ ✅ ✅');
         }
         catch (Throwable $e){
-            Log::getInstance()->Add('     !!!!!!!!!!!!!!    Тест провален: '.$e);
+            Log::getInstance()->Add('               ❗️ ❗️ ❗️ Тест провален  ❗️ ❗️ ❗️ : '.$e);
         }
 
 

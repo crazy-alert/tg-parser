@@ -5,9 +5,6 @@ class ParamForBotApiType{
     public bool $IsOptional;
     public string $Description;
 
-
-    public static Array $AllTypes = [];
-
     /**
      * @param string $Field
      * @param string $Type

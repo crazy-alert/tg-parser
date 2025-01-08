@@ -77,6 +77,7 @@ $InputUpdate = '{
 $InputUpdate = json_decode($InputUpdate, true);
 $Update = new Parser\Update(input:$InputUpdate);
 
-if($Update->callback_query->message->reply_to_message->from !== (int)1112223333333){
-    Throw new Exception('Условие не выполнено');
+if($Update->callback_query->message->reply_to_message->from->id !== (int)1112223333333){
+    Throw new Exception('               ❗️ ❗️ ❗️ Условие не выполнено  ❗️ ❗️ ❗');
 }
+

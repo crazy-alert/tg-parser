@@ -54,7 +54,7 @@ class BotApiType extends BotApiEntity{
     }
     public function __Save(string $namespace, string $folder):bool {
         $otstup = '        ';
-        $data = '<?php'.PHP_EOL.PHP_EOL.'namespace '.$namespace.';'.PHP_EOL.PHP_EOL.$otstup;
+        $data = '<?php'.PHP_EOL.PHP_EOL.'namespace '.$namespace.';'.'//R45'.PHP_EOL.PHP_EOL.$otstup;
         $data .= '/**  '.$this->desc;
 
         $childrens = AbstractObject::GetChildrens($this->name);
@@ -62,26 +62,31 @@ class BotApiType extends BotApiEntity{
             $data .= ' maybe: '.implode('|', $childrens);
         }
         $data .= ' */';
-        $data .= PHP_EOL.$otstup;
 
+
+
+        $data .= '//R23465B'.PHP_EOL.$otstup;
         if(is_array($childrens)){
             $data .= $otstup.'abstract class '.$this->name.'{';
-            $data .= PHP_EOL.$otstup;
+            $data .= '//RTAE4VT43'.PHP_EOL.$otstup;
             if($this->name == 'ChatMember'){
                 $data .= 'abstract public function save($bot);';
-                $data .= PHP_EOL.$otstup;
-                $data .= '}'.PHP_EOL;
+                $data .= '//RW34TW345TW'.PHP_EOL.$otstup;
+                $data .= '}'.'//R45SRTH'.PHP_EOL;
             }
         }
         else{
-            $data .= 'readonly class '.$this->name;
-            if($MyFather =  $this->GiveMeMyFather()){ $data .= ' extends '.$MyFather->name; }
+
 
             $otstup = '            ';
-            $data .= '{'.PHP_EOL.PHP_EOL.$otstup;
+            $data .= 'readonly class '.$this->name;
+            $data .= (($MyFather =  $this->GiveMeMyFather()) ? ' extends '.$MyFather->name : '').'{'.'//R45GSERG'.PHP_EOL.PHP_EOL.$otstup;
 
-            $data4constructor = $otstup.'public function __construct(array $input) {'.PHP_EOL.$otstup.'    ';
+            $data4constructor = $otstup.'public function __construct(array $input) {';
+
             foreach ($this->params AS $param){
+                $data4constructor .='//R45SERTSE'.PHP_EOL. $otstup.'    ';
+
                 $NamespacePath = '\\'.$namespace.'\\';
 
                 $data4constructor .='$this->'.$param->Field.' = ';
@@ -118,60 +123,89 @@ class BotApiType extends BotApiEntity{
                     $data4constructor .='(bool)$input["'.$param->Field.'"]';
                 }
                 elseif(array_key_exists($param->Type, StorageSingleton::GetAbstractList())){ //если это абстрактный тип
-                    $type .= $param->Type;
-
+//                    $param-> ParamForBotApiType(
+//                                [Field] => old_chat_member
+//                                [Type] => ChatMember
+//                                [IsOptional] => false
+//                                [Description] => Previous information about the chat member
+//                            )
                     //это жуткий костыль
+
                     $line = explode(PHP_EOL, $data4constructor);//Разбиваем строку по пробелам
                     array_pop($line);//Удаляем последний элемент массива
-                    $data4constructor = implode(PHP_EOL, $line).PHP_EOL.$otstup.'    ';//собираем строку пробелами
+                    $data4constructor = implode(PHP_EOL, $line).'//R45AEWRTWE45T'.PHP_EOL;//собираем строку пробелами
 
-                    $AllTgTypes = StorageSingleton::GetAbstractAndNonAbstractTypes();
-                    foreach (StorageSingleton::GetApiTypeList() as $keyObject => $object) {
-                        if (array_key_exists($object->name, $AllTgTypes) AND ($AllTgTypes[$object->name] instanceof self)){
-//                            $data4constructor .= $otstup;
-//                            if($keyObject != 0 ){
-//                                $data4constructor .= 'else';
-//                            }
-//                            $data4constructor .= 'if(';
-//                            foreach ($AllTgTypes[$object]->params AS $keysubparam => $subparam){
-//                                if($keysubparam != 0 ){
-//                                    $data4constructor .=' AND '.PHP_EOL. $otstup.'   ';
-//                                }
-//                                $data4constructor .=' array_key_exists(\''.$subparam->Field.'\', $input) ';
-//                            }
+                    $type .= $param->Type;
 
-                            $RequariedKeysString = '[';
-                            foreach ($AllTgTypes[$object->name]->params AS $keysubparam => $subparam){
-                                if($keysubparam != 0 ){
-                                    $RequariedKeysString .=', ';
+                    $ApiTypeList = StorageSingleton::GetApiTypeList();
+                    $AbstractList = StorageSingleton::GetAbstractList();
+                    $AbstractType = $AbstractList[$param->Type];
+                    $Chields = $AbstractType->chields;
+                    foreach($Chields AS $keychield => $chield){
+                        $ThisType = $ApiTypeList[$chield];
+                        /*$ThisType => BotApiType::(  'name' => 'MessageOriginUser',
+                                                    'desc' => 'The message was originally sent by a known user.',
+                                                    'params' => array ( 0 => \ParamForBotApiType::( 'Field' => 'type',
+                                                                                                    'Type' => 'String',
+                                                                                                    'IsOptional' => false,
+                                                                                                    'Description' => 'Type of the message origin, always “user”',),
+                                                                        1 => \ParamForBotApiType::( 'Field' => 'date',
+                                                                                                    'Type' => 'Integer',
+                                                                                                    'IsOptional' => false,
+                                                                                                    'Description' => 'Date the message was sent originally in Unix time', ),
+                                                                       2 => \ParamForBotApiType::( 'Field' => 'sender_user',
+                                                                                                    'Type' => 'User',
+                                                                                                    'IsOptional' => false,
+                                                                                                    'Description' => 'User that sent the message originally',), ), ))*/
+                        $data4constructor .= '                ';
+                        if($keychield !=0){$data4constructor .='else';}
+                        $data4constructor .= 'if(array_key_exists("'.$param->Field.'", $input) AND';
+                        $data4constructor .= ' is_array($input["'.$param->Field.'"]) '.'//R4TYYYY5'.PHP_EOL;
+                        foreach ($ThisType->params AS $keysubparam => $subparam){
+                            if($subparam->IsOptional){ continue;}
+//                            if($keysubparam != 0 ){ $data4constructor .= '                   AND ';}
+                            $data4constructor .= '                   AND ';
+
+                            $data4constructor .= 'array_key_exists(\''.$subparam->Field.'\', $input["'.$param->Field.'"])';
+                            if(str_contains(mb_strtolower($subparam->Description), 'always')){
+                                 preg_match_all('/`(.*?)`/', str_replace(['“', '”', '\'', '"'], '`', $subparam->Description), $matches);
+
+                                if($subparam->Type === 'String' AND $matches[1][0] !== null){
+                                    $data4constructor .= ' AND $input["'.$param->Field.'"]["'.$subparam->Field.'"] === \''.$matches[1][0].'\'';
                                 }
-                                $RequariedKeysString .= '\''.$subparam->Field.'\'=>\'\'';
-                            }
-                            $RequariedKeysString .= ']';
+                                elseif(str_contains(mb_strtolower($subparam->Description), 'always a positive number')){
+                                    $data4constructor .= ' AND (int)$input["'.$param->Field.'"]["'.$subparam->Field.'"] > 0';
+                                }
+                                elseif(str_contains(mb_strtolower($subparam->Description), 'always 0.')){
+                                    $data4constructor .= ' AND (int)$input["'.$param->Field.'"]["'.$subparam->Field.'"] == \'0\'';
+                                }
+                                else{
+                                    $r = 0;
+                                }
 
-                            $data4constructor .= $otstup.'    ';
-                            if($keyObject != 0 ){
-                                $data4constructor .= 'else';
                             }
-                            $data4constructor .= 'if(';
-                            if($param->IsOptional){$data4constructor .= 'array_key_exists(\''.$param->Field.'\', $input) AND '; }
-                            $data4constructor .= 'count(array_diff_key('.$RequariedKeysString.', $input[\''.$param->Field.'\'])) === 0){';
+
+                            $data4constructor .='// '.$subparam->Description.PHP_EOL;
+
+
                         }
+                        $data4constructor .= '                ){'.'//R4WE5YWE45YWE455'.PHP_EOL;
+                        $data4constructor .= '                    $this->'.$param->Field.' = new '.$ThisType->name.'($input["'.$param->Field.'"]);';
+                        $data4constructor .= '//R44TW45TYW45YT5'.PHP_EOL;
+                        $data4constructor .= '                }';
+                        $data4constructor .= '//R45WE45YEW45YE'.PHP_EOL;
+                    }
 
-                        $data4constructor .= PHP_EOL.$otstup.'    '.'$this->'.$param->Field.' =  new '.$NamespacePath.$object->name.'($input[\''.$param->Field.'\']);'.PHP_EOL.$otstup.'    '.'}'.PHP_EOL;
-                    }
-                    if($param->IsOptional){
-                        $data4constructor .=$otstup.'    '.'else{'.PHP_EOL.$otstup.$otstup.'$this->'.$param->Field.' =  NULL;'.PHP_EOL.$otstup.'    '.'}'.PHP_EOL;
-                    }
-                    else{
-                        $data4constructor .=$otstup.'    '.'else{'.PHP_EOL.$otstup.$otstup.'Throw new \Exception(\'ашипко\');'.PHP_EOL.$otstup.'    '.'}'.PHP_EOL.PHP_EOL;
-                    }
+
+
+
+
                 }
                 elseif(str_starts_with($param->Type, 'Array')){
                     $type .='array';
                     $data4constructor .=' $input["'.$param->Field.'"]';
                 }
-                elseif(array_key_exists($param->Type,  StorageSingleton::GetAbstractAndNonAbstractTypes())){
+                elseif(array_key_exists($param->Type,  StorageSingleton::GetApiTypeList())){
                     $type .=$param->Type;
                     $data4constructor .=' new '.$NamespacePath.$param->Type.'($input["'.$param->Field.'"])';
                 }
@@ -186,22 +220,34 @@ class BotApiType extends BotApiEntity{
 
                 /** @var $param ParamForBotApiType */
                 $data .= '/**   @var $'.$param->Field.' '.$type.' ('.$param->Type.') '.$param->Description.' */';
-                $data .= PHP_EOL.$otstup;
+                $data .= '//R4E45Y4R5YER5Y5'.PHP_EOL.$otstup;
                 $data .= 'public '.$type;
-                $data .=' $'.$param->Field.';'.PHP_EOL.PHP_EOL.$otstup;
+                $data .=' $'.$param->Field.';'.'//R434Q5W43TSERG5'.PHP_EOL.PHP_EOL.$otstup;
 
-//                $ArrayOfAbstractObjects = StorageSingleton::GetAbstractList();
-//                if(array_key_exists($param->Type, $ArrayOfAbstractObjects)){
-//                    if($param->IsOptional){
-//                        $data4constructor .=' : NULL';
-//                    }
-//                    $data4constructor .= ';'.PHP_EOL;
-//                }
-                if($param->IsOptional){ $data4constructor .=' : NULL'; }
-                $data4constructor .= ';'.PHP_EOL. $otstup.'    ';
+
+
+                //здесь добавляем else{
+                //                     $this->forward_origin = NULL;
+                //                }
+                //                ИЛИ : NULL;
+                if($param->IsOptional ){
+                    if(array_key_exists($param->Type,  StorageSingleton::GetAbstractList())){
+                        $data4constructor .= '                else{'.'//R459OY89OYUK'.PHP_EOL;
+                        $data4constructor .= '                     $this->'.$param->Field.' = NULL;'.'//R45AFW34RW345YX'.PHP_EOL;
+                        $data4constructor .= '                }'.'//RZSDGSE5Y45'.PHP_EOL;
+                    }
+                    else{
+                        $data4constructor .=' : NULL;';
+                    }
+
+                }
+                else{
+                    $data4constructor .= ';';
+                }
+
             }
-            $data .= PHP_EOL.PHP_EOL;
-            $data .=$data4constructor.PHP_EOL. $otstup.'}'.PHP_EOL.'        }'.PHP_EOL;
+            $data .= '//RA4WTAE4TWE45'.PHP_EOL.PHP_EOL;
+            $data .=$data4constructor.'//RQ234R34WR3FAERGF45'.PHP_EOL. $otstup.'}'.'//A4TE54TR45'.PHP_EOL.'        }'.'//R44TAE4TGZDFG5'.PHP_EOL;
         }
         $filename = $folder.DIRECTORY_SEPARATOR.$this->name.'.php';
         $saved = file_put_contents($filename, $data);
